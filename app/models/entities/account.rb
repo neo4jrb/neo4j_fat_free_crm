@@ -25,29 +25,51 @@
 #  category        :string(32)
 #
 
-class Account < ActiveRecord::Base
-  belongs_to :user
-  belongs_to :assignee, class_name: "User", foreign_key: :assigned_to
-  has_many :account_contacts, dependent: :destroy
-  has_many :contacts, -> { distinct }, through: :account_contacts
-  has_many :account_opportunities, dependent: :destroy
-  has_many :opportunities, -> { order("opportunities.id DESC").distinct }, through: :account_opportunities
-  has_many :tasks, as: :asset, dependent: :destroy # , :order => 'created_at DESC'
-  has_one :billing_address, -> { where(address_type: "Billing") }, dependent: :destroy, as: :addressable, class_name: "Address"
-  has_one :shipping_address, -> { where(address_type: "Shipping") }, dependent: :destroy, as: :addressable, class_name: "Address"
-  has_many :addresses, dependent: :destroy, as: :addressable, class_name: "Address" # advanced search uses this
-  has_many :emails, as: :mediator
+class Account
+  include Neo4j::ActiveNode
+
+  property :name
+  property :access
+  property :website
+  property :toll_free_phone
+  property :phone
+  property :fax
+  property :email
+  property :background_info
+  property :rating
+  property :category
+
+  has_one :out, :user, type: :user
+  has_one :out, :assignee, type: :assignee, model_class: 'User'
+  has_many :in, :account_contacts, source: :account, dependent: :destroy
+
+  def contacts
+    self.account_contacts.contact(:contact).pluck('DISTINCT contact')
+  end
+
+  has_many :in, :account_opportunities, source: :account, dependent: :destroy
+
+  def opportunities
+    self.account_opportunities.opportunity(:opportunity).order(id: :DESC).pluck('DISTINCT opportunity')
+  end
+
+  ### has_many :tasks, as: :asset, dependent: :destroy # , :order => 'created_at DESC'
+  ### has_one :billing_address, -> { where(address_type: "Billing") }, dependent: :destroy, as: :addressable, class_name: "Address"
+  ### has_one :shipping_address, -> { where(address_type: "Shipping") }, dependent: :destroy, as: :addressable, class_name: "Address"
+  ### has_many :addresses, dependent: :destroy, as: :addressable, class_name: "Address" # advanced search uses this
+  ### has_many :emails, as: :mediator
 
   serialize :subscribed_users, Set
 
-  accepts_nested_attributes_for :billing_address,  allow_destroy: true, reject_if: proc { |attributes| Address.reject_address(attributes) }
-  accepts_nested_attributes_for :shipping_address, allow_destroy: true, reject_if: proc { |attributes| Address.reject_address(attributes) }
+  ### accepts_nested_attributes_for :billing_address,  allow_destroy: true, reject_if: proc { |attributes| Address.reject_address(attributes) }
+  ### accepts_nested_attributes_for :shipping_address, allow_destroy: true, reject_if: proc { |attributes| Address.reject_address(attributes) }
 
-  scope :state, ->(filters) {
-    where('category IN (?)' + (filters.delete('other') ? ' OR category IS NULL' : ''), filters)
-  }
-  scope :created_by,  ->(user) { where(user_id: user.id) }
-  scope :assigned_to, ->(user) { where(assigned_to: user.id) }
+  def self.state(filters)
+    all.as(:account).where(category: filters).where(filters.delete('other') ? ' OR account.category IS NULL' : '')
+  end
+
+  ### scope :created_by,  ->(user) { where(user_id: user.id) }
+  ### scope :assigned_to, ->(user) { where(assigned_to: user.id) }
 
   scope :text_search, ->(query) { search('name_or_email_cont' => query).result }
 
@@ -58,17 +80,17 @@ class Account < ActiveRecord::Base
 
   scope :by_name, -> { order(:name) }
 
-  uses_user_permissions
-  acts_as_commentable
-  uses_comment_extensions
-  acts_as_taggable_on :tags
-  has_paper_trail class_name: 'Version', ignore: [:subscribed_users]
-  has_fields
-  exportable
-  sortable by: ["name ASC", "rating DESC", "created_at DESC", "updated_at DESC"], default: "created_at DESC"
+  ### uses_user_permissions
+  ### acts_as_commentable
+  ### uses_comment_extensions
+  ### acts_as_taggable_on :tags
+  ### has_paper_trail class_name: 'Version', ignore: [:subscribed_users]
+  ### has_fields
+  ### exportable
+  ### sortable by: ["name ASC", "rating DESC", "created_at DESC", "updated_at DESC"], default: "created_at DESC"
 
-  has_ransackable_associations %w(contacts opportunities tags activities emails addresses comments tasks)
-  ransack_can_autocomplete
+  ### has_ransackable_associations %w(contacts opportunities tags activities emails addresses comments tasks)
+  ### ransack_can_autocomplete
 
   validates_presence_of :name, message: :missing_account_name
   validates_uniqueness_of :name, scope: :deleted_at, if: -> { Setting.require_unique_account_names }

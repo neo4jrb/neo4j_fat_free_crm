@@ -12,6 +12,7 @@ require "active_record/railtie"
 require "action_controller/railtie"
 require "action_mailer/railtie"
 require "sprockets/railtie"
+require "neo4j/railtie"
 
 # TODO: require from ransack_ui
 require "ransack/constants"

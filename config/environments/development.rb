@@ -42,5 +42,8 @@ if defined?(FatFreeCRM::Application)
     # Checks for improperly declared sprockets dependencies.
     # Raises helpful error messages.
     config.assets.raise_runtime_errors = true
+
+    config.neo4j.session_type = :server_db 
+    config.neo4j.session_path = 'http://localhost:7070'
   end
 end

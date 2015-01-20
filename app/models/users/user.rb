@@ -39,52 +39,79 @@
 #  single_access_token :string(255)
 #
 
-class User < ActiveRecord::Base
+class User
+  include Neo4j::ActiveNode
   before_create :check_if_needs_approval
   before_destroy :check_if_current_user, :check_if_has_related_assets
 
-  has_one :avatar, as: :entity, dependent: :destroy  # Personal avatar.
-  has_many :avatars                                         # As owner who uploaded it, ex. Contact avatar.
-  has_many :comments, as: :commentable                   # As owner who created a comment.
-  has_many :accounts
-  has_many :campaigns
-  has_many :leads
-  has_many :contacts
-  has_many :opportunities
-  has_many :assigned_opportunities, class_name: 'Opportunity', foreign_key: 'assigned_to'
-  has_many :permissions, dependent: :destroy
-  has_many :preferences, dependent: :destroy
-  has_many :lists
-  has_and_belongs_to_many :groups
+  property :username
+  property :email
+  property :first_name
+  property :last_name
+  property :title
+  property :company
+  property :alt_email
+  property :phone
+  property :mobile
+  property :aim
+  property :yahoo
+  property :google
+  property :skype
+  property :password_hash
+  property :password_salt
+  property :persistence_token
+  property :perishable_token
+  property :login_count
+  property :admin, type: Boolean
+  property :single_access_token
 
-  has_paper_trail class_name: 'Version', ignore: [:last_request_at, :perishable_token]
+  ### has_one :avatar, as: :entity, dependent: :destroy  # Personal avatar.
+  ### has_many :avatars                                         # As owner who uploaded it, ex. Contact avatar.
+  ### has_many :comments, as: :commentable                   # As owner who created a comment.
+  has_many :in, :accounts, origin: :user
+  has_many :in, :campaigns, origin: :user
+  has_many :in, :leads, origin: :user
+  has_many :in, :contacts, origin: :user
+  has_many :in, :opportunities, origin: :user
 
-  scope :by_id, -> { order('id DESC') }
-  scope :without, ->(user) { where('id != ?', user.id).by_name }
-  scope :by_name, -> { order('first_name, last_name, email') }
+  has_many :in, :assigned_opportunities, class_name: 'Opportunity', origin: :assignee
+  ### has_many :permissions, dependent: :destroy
+  ### has_many :preferences, dependent: :destroy
+  has_many :in, :lists, origin: :user
+  ### has_and_belongs_to_many :groups
 
-  scope :text_search, ->(query) {
-    query = query.gsub(/[^\w\s\-\.'\p{L}]/u, '').strip
-    where('upper(username) LIKE upper(:s) OR upper(email) LIKE upper(:s) OR upper(first_name) LIKE upper(:s) OR upper(last_name) LIKE upper(:s)', s: "%#{query}%")
-  }
+  ### has_paper_trail class_name: 'Version', ignore: [:last_request_at, :perishable_token]
 
-  scope :my, -> { accessible_by(User.current_ability) }
-
-  scope :have_assigned_opportunities, -> {
-    joins("INNER JOIN opportunities ON users.id = opportunities.assigned_to")
-      .where("opportunities.stage <> 'lost' AND opportunities.stage <> 'won'")
-      .select('DISTINCT(users.id), users.*')
-  }
-
-  acts_as_authentic do |c|
-    c.session_class = Authentication
-    c.validates_uniqueness_of_login_field_options = { case_sensitive: false, message: :username_taken }
-    c.validates_length_of_login_field_options     = { minimum: 1, message: :missing_username }
-    c.validates_uniqueness_of_email_field_options = { message: :email_in_use }
-    c.validates_length_of_password_field_options  = { minimum: 0, allow_blank: true, if: :require_password? }
-    c.ignore_blank_passwords = true
-    c.crypto_provider = Authlogic::CryptoProviders::Sha512
+  scope :by_id, -> { order(id: :DESC) }
+  def self.without(user)
+    all.as(:user).where('ID(user) <> {{other_user_id}}').params(other_user: user.neo_id).by_name
   end
+  def self.by_name
+    all.as(:user).order('user.first_name, user.last_name, user.email')
+  end
+
+  ### scope :text_search, ->(query) {
+  ###   query = query.gsub(/[^\w\s\-\.'\p{L}]/u, '').strip
+  ###   where('upper(username) LIKE upper(:s) OR upper(email) LIKE upper(:s) OR upper(first_name) LIKE upper(:s) OR upper(last_name) LIKE upper(:s)', s: "%#{query}%")
+  ### }
+
+  ### scope :my, -> { accessible_by(User.current_ability) }
+
+  ### scope :have_assigned_opportunities, -> {
+  ###   joins("INNER JOIN opportunities ON users.id = opportunities.assigned_to")
+  ###     .where("opportunities.stage <> 'lost' AND opportunities.stage <> 'won'")
+  ###     .select('DISTINCT(users.id), users.*')
+  ### }
+
+  ### acts_as_authentic do |c|
+  ###   c.session_class = Authentication
+  ###   c.validates_uniqueness_of_login_field_options = { case_sensitive: false, message: :username_taken }
+  ###   c.validates_length_of_login_field_options     = { minimum: 1, message: :missing_username }
+  ###   c.validates_uniqueness_of_email_field_options = { message: :email_in_use }
+  ###   c.validates_length_of_password_field_options  = { minimum: 0, allow_blank: true, if: :require_password? }
+  ###   c.ignore_blank_passwords = true
+  ###   c.crypto_provider = Authlogic::CryptoProviders::Sha512
+  ### end
 
   # Store current user in the class so we could access it from the activity
   # observer without extra authentication query.

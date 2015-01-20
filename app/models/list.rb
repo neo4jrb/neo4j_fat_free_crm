@@ -3,10 +3,12 @@
 # Fat Free CRM is freely distributable under the terms of MIT license.
 # See MIT-LICENSE file or http://www.opensource.org/licenses/mit-license.php
 #------------------------------------------------------------------------------
-class List < ActiveRecord::Base
+class List
+  include Neo4j::ActiveNode
+
   validates_presence_of :name
   validates_presence_of :url
-  belongs_to :user
+  has_one :out, :user, type: :user
 
   # Parses the controller from the url
   def controller

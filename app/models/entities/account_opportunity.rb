@@ -15,12 +15,15 @@
 #  updated_at     :datetime
 #
 
-class AccountOpportunity < ActiveRecord::Base
-  belongs_to :account
-  belongs_to :opportunity
+class AccountOpportunity
+  include Neo4j::ActiveNode
+
+  has_one :out, :account, type: :account
+  has_one :out, :opportunity, type: :opportunity
+
   validates_presence_of :account_id, :opportunity_id
 
-  has_paper_trail class_name: 'Version'
+  ### has_paper_trail class_name: 'Version'
 
   ActiveSupport.run_load_hooks(:fat_free_crm_account_opportunity, self)
 end

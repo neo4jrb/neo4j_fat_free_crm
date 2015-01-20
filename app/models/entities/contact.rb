@@ -36,61 +36,85 @@
 #  skype           :string(128)
 #
 
-class Contact < ActiveRecord::Base
-  belongs_to :user
-  belongs_to :lead
-  belongs_to :assignee, class_name: "User", foreign_key: :assigned_to
-  belongs_to :reporting_user, class_name: "User", foreign_key: :reports_to
-  has_one :account_contact, dependent: :destroy
-  has_one :account, through: :account_contact
-  has_many :contact_opportunities, dependent: :destroy
-  has_many :opportunities, -> { order("opportunities.id DESC").distinct }, through: :contact_opportunities
-  has_many :tasks, as: :asset, dependent: :destroy # , :order => 'created_at DESC'
-  has_one :business_address, -> { where(address_type: "Business") }, dependent: :destroy, as: :addressable, class_name: "Address"
-  has_many :addresses, dependent: :destroy, as: :addressable, class_name: "Address" # advanced search uses this
-  has_many :emails, as: :mediator
+class Contact
+  include Neo4j::ActiveNode
 
-  delegate :campaign, to: :lead, allow_nil: true
+  property :first_name
+  property :last_name
+  property :access
+  property :title
+  property :department
+  property :source
+  property :email
+  property :alt_email
+  property :phone
+  property :mobile
+  property :fax
+  property :blog
+  property :linkedin
+  property :facebook
+  property :twitter
+  ### property :born_on, type: DateTime
+  property :do_not_call, type: Boolean
+  property :background_info
+  property :skype
 
-  has_ransackable_associations %w(account opportunities tags activities emails addresses comments tasks)
-  ransack_can_autocomplete
+
+  has_one :out, :user, type: :user
+  has_one :out, :lead, type: :lead
+  has_one :out, :assignee, type: :assignee, model_class: 'User'
+  has_one :out, :reporting_user, type: :reporting_user, model_class: 'User'
+
+  has_one :in, :account_contact, source: :contact, dependent: :destroy
+  ### has_one :out, :account, through: :account_contact
+  ### has_many :contact_opportunities, dependent: :destroy
+  ### has_many :opportunities, -> { order("opportunities.id DESC").distinct }, through: :contact_opportunities
+  ### has_many :tasks, as: :asset, dependent: :destroy # , :order => 'created_at DESC'
+  ### has_one :business_address, -> { where(address_type: "Business") }, dependent: :destroy, as: :addressable, class_name: "Address"
+  ### has_many :addresses, dependent: :destroy, as: :addressable, class_name: "Address" # advanced search uses this
+  ### has_many :emails, as: :mediator
+
+  ### delegate :campaign, to: :lead, allow_nil: true
+
+  ### has_ransackable_associations %w(account opportunities tags activities emails addresses comments tasks)
+  ### ransack_can_autocomplete
 
   serialize :subscribed_users, Set
 
-  accepts_nested_attributes_for :business_address, allow_destroy: true, reject_if: proc { |attributes| Address.reject_address(attributes) }
+  ### accepts_nested_attributes_for :business_address, allow_destroy: true, reject_if: proc { |attributes| Address.reject_address(attributes) }
 
   scope :created_by,  ->(user) { where(user_id: user.id) }
   scope :assigned_to, ->(user) { where(assigned_to: user.id) }
 
-  scope :text_search, ->(query) {
-    t = Contact.arel_table
-    # We can't always be sure that names are entered in the right order, so we must
-    # split the query into all possible first/last name permutations.
-    name_query = if query.include?(" ")
-                   scope, *rest = query.name_permutations.map do |first, last|
-                     t[:first_name].matches("%#{first}%").and(t[:last_name].matches("%#{last}%"))
-                   end
-                   rest.map { |r| scope = scope.or(r) } if scope
-                   scope
-                 else
-                   t[:first_name].matches("%#{query}%").or(t[:last_name].matches("%#{query}%"))
-    end
+  ### scope :text_search, ->(query) {
+  ###   t = Contact.arel_table
+  ###   # We can't always be sure that names are entered in the right order, so we must
+  ###  # split the query into all possible first/last name permutations.
+  ###  name_query = if query.include?(" ")
+  ###                 scope, *rest = query.name_permutations.map do |first, last|
+  ###                   t[:first_name].matches("%#{first}%").and(t[:last_name].matches("%#{last}%"))
+  ###                 end
+  ###                 rest.map { |r| scope = scope.or(r) } if scope
+  ###                 scope
+  ###               else
+  ###                 t[:first_name].matches("%#{query}%").or(t[:last_name].matches("%#{query}%"))
+  ###  end
 
-    other = t[:email].matches("%#{query}%").or(t[:alt_email].matches("%#{query}%"))
-    other = other.or(t[:phone].matches("%#{query}%")).or(t[:mobile].matches("%#{query}%"))
+  ###  other = t[:email].matches("%#{query}%").or(t[:alt_email].matches("%#{query}%"))
+  ###  other = other.or(t[:phone].matches("%#{query}%")).or(t[:mobile].matches("%#{query}%"))
 
-    where(name_query.nil? ? other : name_query.or(other))
-  }
+  ###  where(name_query.nil? ? other : name_query.or(other))
+  ###}
 
-  uses_user_permissions
-  acts_as_commentable
-  uses_comment_extensions
-  acts_as_taggable_on :tags
-  has_paper_trail class_name: 'Version', ignore: [:subscribed_users]
+  ### uses_user_permissions
+  ### acts_as_commentable
+  ### uses_comment_extensions
+  ### acts_as_taggable_on :tags
+  ### has_paper_trail class_name: 'Version', ignore: [:subscribed_users]
 
-  has_fields
-  exportable
-  sortable by: ["first_name ASC",  "last_name ASC", "created_at DESC", "updated_at DESC"], default: "created_at DESC"
+  ### has_fields
+  ### exportable
+  ### sortable by: ["first_name ASC",  "last_name ASC", "created_at DESC", "updated_at DESC"], default: "created_at DESC"
 
   validates_presence_of :first_name, message: :missing_first_name, if: -> { Setting.require_first_names }
   validates_presence_of :last_name,  message: :missing_last_name,  if: -> { Setting.require_last_names  }

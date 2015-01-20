@@ -3,8 +3,8 @@ source 'https://rubygems.org'
 # Uncomment the database that you have configured in config/database.yml
 # ----------------------------------------------------------------------
 # gem 'mysql2'
-# gem 'sqlite3'
-gem 'pg'
+gem 'sqlite3'
+# gem 'pg'
 
 # Removes a gem dependency
 def remove(name)
@@ -30,6 +30,11 @@ gem 'premailer', require: false
 
 # Remove fat_free_crm dependency, to stop it from being auto-required too early.
 remove 'fat_free_crm'
+
+gem 'neo4j', path: '/Users/brian/github/neo4jrb/neo4j'
+gem 'neo4j-core', path: '/Users/brian/github/neo4jrb/neo4j-core'
+gem 'neo4apis-activerecord', path: '/Users/brian/github/neo4jrb/neo4apis-activerecord'
+gem 'neo4apis', path: '/Users/brian/github/neo4jrb/neo4apis'
 
 group :development do
   # don't load these gems in travis

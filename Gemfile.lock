@@ -1,3 +1,44 @@
+PATH
+  remote: /Users/brian/github/neo4jrb/neo4apis
+  specs:
+    neo4apis (0.5.0)
+      colorize (~> 0.7.3)
+      faraday (~> 0.9.0)
+      neo4j-core (>= 3.0)
+      thor (~> 0.19.1)
+
+PATH
+  remote: /Users/brian/github/neo4jrb/neo4apis-activerecord
+  specs:
+    neo4apis-activerecord (0.6.1)
+      activerecord (~> 4.0)
+      neo4apis (~> 0.5.0)
+
+PATH
+  remote: /Users/brian/github/neo4jrb/neo4j
+  specs:
+    neo4j (4.1.1)
+      active_attr (~> 0.8)
+      activemodel (~> 4)
+      activesupport (~> 4)
+      neo4j-core (~> 4.0.0)
+      orm_adapter (~> 0.5.0)
+      railties (~> 4)
+
+PATH
+  remote: /Users/brian/github/neo4jrb/neo4j-core
+  specs:
+    neo4j-core (4.0.0)
+      activesupport
+      faraday (~> 0.9.0)
+      faraday_middleware (~> 0.9.1)
+      httparty
+      httpclient
+      json
+      net-http-persistent
+      os
+      zip
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -20,6 +61,9 @@ GEM
       erubis (~> 2.7.0)
       rails-dom-testing (~> 1.0, >= 1.0.5)
       rails-html-sanitizer (~> 1.0, >= 1.0.1)
+    active_attr (0.8.5)
+      activemodel (>= 3.0.2, < 5.0)
+      activesupport (>= 3.0.2, < 5.0)
     activejob (4.2.0)
       activesupport (= 4.2.0)
       globalid (>= 0.3.0)
@@ -130,6 +174,10 @@ GEM
     factory_girl_rails (4.5.0)
       factory_girl (~> 4.5.0)
       railties (>= 3.0.0)
+    faraday (0.9.1)
+      multipart-post (>= 1.2, < 3)
+    faraday_middleware (0.9.1)
+      faraday (>= 0.7.4, < 0.10)
     ffaker (1.31.0)
     ffi (1.9.6)
     ffi-compiler (0.1.3)
@@ -162,6 +210,10 @@ GEM
     hike (1.2.3)
     hitimes (1.2.2)
     htmlentities (4.3.3)
+    httparty (0.13.3)
+      json (~> 1.8)
+      multi_xml (>= 0.5.2)
+    httpclient (2.6.0.1)
     i18n (0.7.0)
     jquery-migrate-rails (1.2.1)
     jquery-rails (4.0.3)
@@ -187,7 +239,10 @@ GEM
     mini_portile (0.6.2)
     minitest (5.5.1)
     multi_json (1.10.1)
+    multi_xml (0.5.5)
+    multipart-post (2.0.0)
     nenv (0.2.0)
+    net-http-persistent (2.9.4)
     net-scp (1.2.1)
       net-ssh (>= 2.6.5)
     net-ssh (2.9.2)
@@ -197,6 +252,8 @@ GEM
     notiffany (0.0.3)
       nenv (~> 0.1)
       shellany (~> 0.0)
+    orm_adapter (0.5.0)
+    os (0.9.6)
     paper_trail (4.0.0.beta2)
       activerecord (>= 3.0, < 6.0)
       activesupport (>= 3.0, < 6.0)
@@ -205,7 +262,6 @@ GEM
       activesupport (>= 3.0.0)
       cocaine (~> 0.5.3)
       mime-types
-    pg (0.18.1)
     polyamorous (1.1.0)
       activerecord (>= 3.0)
     premailer (1.8.2)
@@ -380,6 +436,7 @@ GEM
       nokogiri (~> 1.3)
     zeus (0.15.3)
       method_source (>= 0.6.7)
+    zip (2.0.2)
 
 PLATFORMS
   ruby
@@ -417,10 +474,13 @@ DEPENDENCIES
   jquery-migrate-rails
   jquery-rails
   jquery-ui-rails
+  neo4apis!
+  neo4apis-activerecord!
+  neo4j!
+  neo4j-core!
   nokogiri
   paper_trail (>= 4.0.0.beta2)
   paperclip
-  pg
   premailer
   pry-rails
   quiet_assets
@@ -443,6 +503,7 @@ DEPENDENCIES
   select2-rails
   selenium-webdriver
   simple_form
+  sqlite3
   therubyracer
   thin
   thor
